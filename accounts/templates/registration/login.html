@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Annotation System{% endblock %}
+
+{% block content %}
+    <h2>Login to Annotation System</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Display form errors if any -->
+        {% if form.non_field_errors %}
+            <div class="errorlist">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">Username:</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <div class="errorlist">{{ form.username.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">Password:</label>
+            {{ form.password }}
+            {% if form.password.errors %}
+                <div class="errorlist">{{ form.password.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <button type="submit">Login</button>
+    </form>
+    
+    <p style="margin-top: 20px; color: #666; font-size: 14px;">
+        Note: Users created by admin will be prompted to change their password on first login.
+    </p>
+{% endblock %}

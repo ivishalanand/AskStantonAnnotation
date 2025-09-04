@@ -1,0 +1,9 @@
+[project]
+name = "annotation"
+version = "0.1.0"
+description = "Django app with forced password change on first login"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.0",
+]

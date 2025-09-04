@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Annotation System{% endblock %}
+
+{% block content %}
+    <div class="nav">
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="{% url 'password_change' %}">Change Password</a>
+        <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" style="background: none; border: none; color: white; text-decoration: none; cursor: pointer; font-size: inherit;">Logout</button>
+        </form>
+    </div>
+    
+    <h1>Welcome to the Dashboard</h1>
+    
+    <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 4px; margin: 20px 0;">
+        <h3>Hello, {{ user.username }}!</h3>
+        <p>You are successfully logged in to the Annotation System.</p>
+    </div>
+    
+    <div style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 4px;">
+        <h3>User Information</h3>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email|default:"Not provided" }}</p>
+        <p><strong>Account Status:</strong> {% if user.is_active %}Active{% else %}Inactive{% endif %}</p>
+        <p><strong>Staff Access:</strong> {% if user.is_staff %}Yes{% else %}No{% endif %}</p>
+        <p><strong>Must Change Password:</strong> {% if user.must_change_password %}Yes{% else %}No{% endif %}</p>
+        <p><strong>Last Login:</strong> {{ user.last_login|default:"First login" }}</p>
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <h3>Quick Actions</h3>
+        <ul style="list-style: none; padding: 0;">
+            <li style="margin: 10px 0;">
+                <a href="{% url 'password_change' %}" style="color: #4CAF50; text-decoration: none;">→ Change Password</a>
+            </li>
+            {% if user.is_staff %}
+            <li style="margin: 10px 0;">
+                <a href="/admin/" style="color: #4CAF50; text-decoration: none;">→ Admin Panel</a>
+            </li>
+            {% endif %}
+            <li style="margin: 10px 0;">
+                <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: none; color: #dc3545; text-decoration: none; cursor: pointer; font-size: inherit; padding: 0;">→ Logout</button>
+                </form>
+            </li>
+        </ul>
+    </div>
+{% endblock %}
