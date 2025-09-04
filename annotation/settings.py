@@ -162,15 +162,15 @@ LOGOUT_REDIRECT_URL = 'login'  # Where to redirect after logout
 
 # Security settings for production
 if not DEBUG:
-    # HTTPS/SSL Settings
-    SECURE_SSL_REDIRECT = True
+    # HTTPS/SSL Settings - Railway handles SSL termination
+    # SECURE_SSL_REDIRECT = True  # Disabled - Railway handles this
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     
-    # HSTS Settings
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    # HSTS Settings (optional for now)
+    # SECURE_HSTS_SECONDS = 31536000  # 1 year
+    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # SECURE_HSTS_PRELOAD = True
 
 # CSRF trusted origins for Railway deployment
 CSRF_TRUSTED_ORIGINS = os.environ.get(
