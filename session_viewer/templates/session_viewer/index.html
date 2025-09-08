@@ -13,14 +13,52 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card text-center">
+        <div class="col-md-8">
+            <div class="card">
                 <div class="card-body">
-                    <h1 class="display-4 text-primary">Hello World</h1>
-                    <p class="lead">Welcome to the Session Viewer</p>
+                    <h1 class="display-6 text-primary mb-4">Session Viewer</h1>
+                    <p class="lead mb-4">Enter a session ID to view the conversation details</p>
+                    
+                    <form action="{% url 'session_viewer:session_detail' session_id='PLACEHOLDER' %}" method="get" id="sessionForm">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="sessionIdInput" 
+                                   placeholder="Enter session ID (e.g., 090cc1ff-a8c0-482d-af7a-64109ae09d57)" 
+                                   required>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-search"></i> View Session
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <h6>Example Session IDs:</h6>
+                        <ul class="list-unstyled">
+                            <li><a href="#" class="session-link" data-session="090cc1ff-a8c0-482d-af7a-64109ae09d57">090cc1ff-a8c0-482d-af7a-64109ae09d57</a> <small class="text-muted">(Working example)</small></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('sessionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const sessionId = document.getElementById('sessionIdInput').value.trim();
+    if (sessionId) {
+        window.location.href = "{% url 'session_viewer:index' %}" + sessionId + "/";
+    }
+});
+
+// Handle example links
+document.querySelectorAll('.session-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const sessionId = this.dataset.session;
+        document.getElementById('sessionIdInput').value = sessionId;
+        window.location.href = "{% url 'session_viewer:index' %}" + sessionId + "/";
+    });
+});
+</script>
 {% endblock %}
