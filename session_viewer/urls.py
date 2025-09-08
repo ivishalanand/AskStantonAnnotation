@@ -5,4 +5,5 @@ app_name = 'session_viewer'
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('<str:session_id>/', views.session_detail, name='session_detail'),
 ]

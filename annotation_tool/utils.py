@@ -60,7 +60,8 @@ async def fetch_annotation_queues(page: int = 1, limit: Optional[int] = None) ->
     """
     try:
         auth_header = get_auth_header()
-        base_url = getattr(settings, 'LANGFUSE_API_BASE_URL', 'https://us.cloud.langfuse.com/api/public')
+        base_url = getattr(settings, 'LANGFUSE_API_BASE_URL', 'https://us.cloud.langfuse.com')
+        url = f"{base_url}/api/public/annotation-queues"
         
         # Build query parameters
         params = {"page": page}
@@ -69,7 +70,7 @@ async def fetch_annotation_queues(page: int = 1, limit: Optional[int] = None) ->
             
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
-                f"{base_url}/annotation-queues",
+                url,
                 headers={"Authorization": f"Basic {auth_header}"},
                 params=params
             )
@@ -102,11 +103,12 @@ async def fetch_annotation_queue(queue_id: str) -> Dict[str, Any]:
     """
     try:
         auth_header = get_auth_header()
-        base_url = getattr(settings, 'LANGFUSE_API_BASE_URL', 'https://us.cloud.langfuse.com/api/public')
+        base_url = getattr(settings, 'LANGFUSE_API_BASE_URL', 'https://us.cloud.langfuse.com')
+        url = f"{base_url}/api/public/annotation-queues/{queue_id}"
         
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
-                f"{base_url}/annotation-queues/{queue_id}",
+                url,
                 headers={"Authorization": f"Basic {auth_header}"}
             )
             response.raise_for_status()
@@ -150,7 +152,8 @@ async def fetch_queue_items(
     """
     try:
         auth_header = get_auth_header()
-        base_url = getattr(settings, 'LANGFUSE_API_BASE_URL', 'https://us.cloud.langfuse.com/api/public')
+        base_url = getattr(settings, 'LANGFUSE_API_BASE_URL', 'https://us.cloud.langfuse.com')
+        url = f"{base_url}/api/public/annotation-queues/{queue_id}/items"
         
         # Build query parameters
         params = {"page": page}
@@ -161,7 +164,7 @@ async def fetch_queue_items(
             
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
-                f"{base_url}/annotation-queues/{queue_id}/items",
+                url,
                 headers={"Authorization": f"Basic {auth_header}"},
                 params=params
             )
