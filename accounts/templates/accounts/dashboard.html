@@ -37,7 +37,7 @@
             </li>
             {% if user.is_staff %}
             <li style="margin: 10px 0;">
-                <a href="/admin/" style="color: #4CAF50; text-decoration: none;">→ Admin Panel</a>
+                <a href="{% url 'admin:index' %}" style="color: #4CAF50; text-decoration: none;" target="_blank">→ Admin Panel</a>
             </li>
             {% endif %}
             <li style="margin: 10px 0;">

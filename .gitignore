@@ -86,3 +86,7 @@ $RECYCLE.BIN/
 
 # uv package manager
 uv.lock
+
+
+# plan
+plan/

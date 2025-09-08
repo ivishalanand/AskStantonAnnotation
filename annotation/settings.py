@@ -49,6 +49,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Local apps
     'accounts',  # Custom accounts app for authentication
+    'core',  # Core app for shared components and central dashboard
+    'annotation_tool',  # Annotation tool for data labeling and annotation
+    'session_viewer',  # Session viewer for monitoring user sessions
 ]
 
 MIDDLEWARE = [
@@ -76,6 +79,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.tools_context',  # Add tools context
             ],
         },
     },
@@ -157,7 +161,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Authentication settings
 AUTH_USER_MODEL = 'accounts.User'  # Use our custom User model
 LOGIN_URL = 'login'  # URL to redirect to when login is required
-LOGIN_REDIRECT_URL = 'dashboard'  # Where to redirect after successful login
+LOGIN_REDIRECT_URL = 'core:dashboard'  # Where to redirect after successful login
 LOGOUT_REDIRECT_URL = 'login'  # Where to redirect after logout
 
 # Security settings for production

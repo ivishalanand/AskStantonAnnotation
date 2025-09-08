@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
@@ -28,7 +28,7 @@ class CustomPasswordChangeView(PasswordChangeView):
     after a successful password change.
     """
     template_name = 'accounts/password_change.html'
-    success_url = reverse_lazy('dashboard')
+    success_url = reverse_lazy('core:dashboard')
     
     def form_valid(self, form):
         """
@@ -46,6 +46,19 @@ class CustomPasswordChangeView(PasswordChangeView):
             messages.success(self.request, 'Your password has been changed successfully!')
         
         return response
+
+# Custom logout view that handles GET requests
+def logout_view(request):
+    """
+    Custom logout view that handles both GET and POST requests.
+    Logs out the user and redirects to login page with a success message.
+    """
+    if request.user.is_authenticated:
+        username = request.user.username
+        logout(request)
+        messages.success(request, f'You have been successfully logged out. Goodbye, {username}!')
+    
+    return redirect('login')
 
 # Dashboard view (simple view for now)
 @login_required

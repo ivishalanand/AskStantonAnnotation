@@ -1,0 +1,68 @@
+{% extends "base_with_sidebar.html" %}
+
+{% block title %}Dashboard - Admin Tools{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h2 class="card-title">Welcome, {{ user.username }}!</h2>
+                    <p class="card-text">
+                        You have access to {{ available_count }} of {{ total_tools }} available admin tools.
+                        Select a tool below to get started.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools Grid -->
+    <div class="row">
+        {% if tools %}
+            {% for tool in tools %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle bg-{{ tool.color }} text-white p-3 me-3">
+                                <i class="bi {{ tool.icon }} fs-3"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-0">{{ tool.name }}</h5>
+                                {% if tool.status %}
+                                <span class="badge bg-warning text-dark">{{ tool.status }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="card-text">{{ tool.description }}</p>
+                        <a href="{{ tool.url }}" class="btn btn-{{ tool.color }} btn-sm">
+                            <i class="bi bi-arrow-right-circle"></i> Open Tool
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info" role="alert">
+                    <h4 class="alert-heading">No Tools Available</h4>
+                    <p>You don't have access to any admin tools yet.</p>
+                    <hr>
+                    <p class="mb-0">
+                        Please contact your administrator to request access to specific tools.
+                        {% if user.is_staff %}
+                        As a staff member, you can manage permissions in the 
+                        <a href="{% url 'admin:index' %}" class="alert-link" target="_blank">Django Admin Panel</a>.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
