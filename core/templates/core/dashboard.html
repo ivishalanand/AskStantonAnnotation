@@ -6,21 +6,6 @@
 
 {% block content %}
 <div class="container-fluid">
-    <!-- Welcome Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h2 class="card-title">Welcome, {{ user.username }}!</h2>
-                    <p class="card-text">
-                        You have access to {{ available_count }} of {{ total_tools }} available admin tools.
-                        Select a tool below to get started.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Tools Grid -->
     <div class="row">
         {% if tools %}

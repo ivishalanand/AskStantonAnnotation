@@ -181,3 +181,9 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
     'CSRF_TRUSTED_ORIGINS',
     'http://localhost:8000,http://127.0.0.1:8000'
 ).split(',')
+
+# Langfuse API Configuration
+# API credentials for annotation queue integration
+LANGFUSE_PUBLIC_KEY = os.environ.get('LANGFUSE_PUBLIC_KEY')
+LANGFUSE_SECRET_KEY = os.environ.get('LANGFUSE_SECRET_KEY')
+LANGFUSE_API_BASE_URL = os.environ.get('LANGFUSE_API_BASE_URL')

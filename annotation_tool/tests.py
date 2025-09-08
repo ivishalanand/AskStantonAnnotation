@@ -56,18 +56,18 @@ class AnnotationToolViewTests(TestCase):
         self.client.login(username='admin', password='testpass123')
         response = self.client.get(reverse('annotation_tool:index'))
         
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Annotation Tool')
-        self.assertContains(response, 'Hello World!')
+        # Index view now redirects to queue_list
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('annotation_tool:queue_list'))
 
     def test_authorized_user_can_access_annotation_tool(self):
         """Test that user with annotation permission can access tool."""
         self.client.login(username='annotator', password='testpass123')
         response = self.client.get(reverse('annotation_tool:index'))
         
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Annotation Tool')
-        self.assertContains(response, 'Data annotation and labeling platform')
+        # Index view now redirects to queue_list
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('annotation_tool:queue_list'))
 
     def test_unauthorized_user_cannot_access_annotation_tool(self):
         """Test that user without permission cannot access annotation tool."""
@@ -78,24 +78,201 @@ class AnnotationToolViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('core:dashboard'))
 
-    def test_annotation_tool_displays_correct_context(self):
-        """Test that annotation tool displays correct template context."""
+    def test_annotation_tool_queue_list_view(self):
+        """Test that queue list view works correctly."""
         self.client.login(username='admin', password='testpass123')
-        response = self.client.get(reverse('annotation_tool:index'))
+        response = self.client.get(reverse('annotation_tool:queue_list'))
         
+        # Should return 200 even with API error (graceful degradation)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Annotation Tool')
-        self.assertContains(response, 'Data Import and Export')
-        self.assertContains(response, 'Multiple Annotation Types')
-        self.assertContains(response, 'Under Development')
+        self.assertContains(response, 'Annotation Queues')
 
-    def test_annotation_tool_shows_planned_features(self):
-        """Test that annotation tool displays planned features."""
+    def test_annotation_tool_queue_detail_view(self):
+        """Test that queue detail view handles invalid queue gracefully."""
         self.client.login(username='admin', password='testpass123')
-        response = self.client.get(reverse('annotation_tool:index'))
+        response = self.client.get(reverse('annotation_tool:queue_detail', kwargs={'queue_id': 'invalid-queue'}))
         
+        # Should return 200 with error message (graceful error handling)
         self.assertEqual(response.status_code, 200)
-        # Check for planned features
-        self.assertContains(response, 'User Management and Assignments')
-        self.assertContains(response, 'Progress Tracking and Analytics')
-        self.assertContains(response, 'Quality Control and Review Workflow')
+        self.assertContains(response, 'Queue Detail')
+
+
+class AnnotationUtilsTests(TestCase):
+    """Test cases for annotation tool utilities."""
+    
+    def test_get_auth_header_no_credentials(self):
+        """Test auth header generation fails without credentials."""
+        from annotation_tool.utils import get_auth_header, LangfuseAPIError
+        with self.settings(LANGFUSE_PUBLIC_KEY=None):
+            with self.assertRaises(LangfuseAPIError):
+                get_auth_header()
+    
+    def test_get_auth_header_with_credentials(self):
+        """Test auth header generation with credentials."""
+        from annotation_tool.utils import get_auth_header
+        with self.settings(LANGFUSE_PUBLIC_KEY='test_key', LANGFUSE_SECRET_KEY='test_secret'):
+            header = get_auth_header()
+            self.assertIsInstance(header, str)
+            # Should be base64 encoded 
+            import base64
+            decoded = base64.b64decode(header).decode('ascii')
+            self.assertEqual(decoded, 'test_key:test_secret')
+
+    def test_api_error_handling(self):
+        """Test that API errors are handled gracefully."""
+        from annotation_tool.utils import get_annotation_queues
+        # Without proper credentials, should return error dict
+        with self.settings(LANGFUSE_PUBLIC_KEY=None):
+            result = get_annotation_queues()
+            self.assertTrue(result.get('error'))
+            self.assertIn('message', result)
+            self.assertEqual(result.get('data'), [])
+
+
+class AnnotationModelTests(TestCase):
+    """Test cases for annotation tool models."""
+    
+    def test_annotation_queue_from_api_data(self):
+        """Test creating AnnotationQueue from API data."""
+        from annotation_tool.models import AnnotationQueue
+        
+        api_data = {
+            'id': 'test-queue-123',
+            'name': 'Test Queue',
+            'description': 'Test description',
+            'createdAt': '2023-01-01T00:00:00.000Z',
+            'updatedAt': '2023-01-02T00:00:00.000Z'
+        }
+        
+        queue = AnnotationQueue.from_api_data(api_data)
+        self.assertEqual(queue.queue_id, 'test-queue-123')
+        self.assertEqual(queue.name, 'Test Queue')
+        self.assertEqual(queue.description, 'Test description')
+        self.assertTrue(queue.is_active)
+        
+    def test_annotation_queue_str_representation(self):
+        """Test string representation of AnnotationQueue."""
+        from annotation_tool.models import AnnotationQueue
+        queue = AnnotationQueue(queue_id='test-123', name='Test Queue')
+        self.assertEqual(str(queue), 'Test Queue (test-123)')
+    
+    def test_annotation_queue_item_from_api_data(self):
+        """Test creating AnnotationQueueItem from API data."""
+        from annotation_tool.models import AnnotationQueueItem
+        
+        api_data = {
+            'id': 'item-123',
+            'queueId': 'queue-123',
+            'objectId': 'object-123',
+            'objectType': 'TRACE',
+            'status': 'PENDING',
+            'createdAt': '2023-01-01T00:00:00.000Z',
+            'updatedAt': '2023-01-02T00:00:00.000Z',
+            'completedAt': None
+        }
+        
+        item = AnnotationQueueItem.from_api_data(api_data)
+        self.assertEqual(item.item_id, 'item-123')
+        self.assertEqual(item.object_type, 'TRACE')
+        self.assertEqual(item.status, 'PENDING')
+        self.assertTrue(item.is_pending())
+        self.assertFalse(item.is_completed())
+        
+    def test_annotation_queue_item_helper_methods(self):
+        """Test helper methods on AnnotationQueueItem."""
+        from annotation_tool.models import AnnotationQueueItem
+        
+        # Test completed item
+        item = AnnotationQueueItem(status='COMPLETED')
+        self.assertTrue(item.is_completed())
+        self.assertFalse(item.is_pending())
+        self.assertEqual(item.get_display_status(), 'Completed')
+        
+        # Test pending item
+        item = AnnotationQueueItem(status='PENDING')
+        self.assertFalse(item.is_completed())
+        self.assertTrue(item.is_pending())
+        self.assertEqual(item.get_display_status(), 'Pending')
+        
+        # Test object type display
+        item = AnnotationQueueItem(object_type='TRACE')
+        self.assertEqual(item.get_display_object_type(), 'Trace')
+
+
+class AnnotationViewIntegrationTests(TestCase):
+    """Integration tests for annotation views with mock API responses."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.client = Client()
+        self.superuser = User.objects.create_user(
+            username='admin',
+            password='testpass123',
+            is_superuser=True
+        )
+        self.superuser.must_change_password = False
+        self.superuser.save()
+
+    def test_queue_list_view_with_api_error(self):
+        """Test queue list view handles API errors gracefully."""
+        self.client.login(username='admin', password='testpass123')
+        
+        # This will trigger an API error due to missing credentials
+        with self.settings(LANGFUSE_PUBLIC_KEY=None):
+            response = self.client.get(reverse('annotation_tool:queue_list'))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'Annotation Queues')
+            # Should show error message
+            self.assertIn('error_message', response.context)
+
+    def test_queue_detail_pagination(self):
+        """Test queue detail view with pagination parameters."""
+        self.client.login(username='admin', password='testpass123')
+        
+        # Test with page parameter
+        response = self.client.get(
+            reverse('annotation_tool:queue_detail', kwargs={'queue_id': 'test-queue'}) + '?page=2'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Queue Detail')
+
+    def test_queue_model_methods(self):
+        """Test additional queue model methods."""
+        from annotation_tool.models import AnnotationQueue
+        from datetime import datetime
+        
+        queue = AnnotationQueue(
+            queue_id='test-123',
+            name='Test Queue',
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        
+        # Test to_dict method
+        queue_dict = queue.to_dict()
+        self.assertEqual(queue_dict['queue_id'], 'test-123')
+        self.assertEqual(queue_dict['name'], 'Test Queue')
+        
+        # Test get_absolute_url
+        expected_url = reverse('annotation_tool:queue_detail', kwargs={'queue_id': 'test-123'})
+        self.assertEqual(queue.get_absolute_url(), expected_url)
+
+    def test_queue_item_to_dict(self):
+        """Test queue item to_dict method."""
+        from annotation_tool.models import AnnotationQueueItem
+        from datetime import datetime
+        
+        item = AnnotationQueueItem(
+            item_id='item-123',
+            queue_id='queue-123',
+            object_id='obj-123',
+            object_type='TRACE',
+            status='PENDING',
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        
+        item_dict = item.to_dict()
+        self.assertEqual(item_dict['item_id'], 'item-123')
+        self.assertEqual(item_dict['object_type'], 'TRACE')
+        self.assertEqual(item_dict['status'], 'PENDING')

@@ -1,0 +1,299 @@
+{% extends "base_with_sidebar.html" %}
+
+{% block title %}{{ queue.name|default:"Queue Detail" }} - Admin Tools{% endblock %}
+
+{% block page_title %}{{ queue.name|default:"Queue Detail" }}{% endblock %}
+
+
+{% block breadcrumb %}
+<li class="breadcrumb-item">
+    <a href="{% url 'annotation_tool:index' %}" class="text-decoration-none">
+        <i class="bi bi-pencil-square"></i> Annotation Tool
+    </a>
+</li>
+<li class="breadcrumb-item">
+    <a href="{% url 'annotation_tool:queue_list' %}" class="text-decoration-none">
+        Queues
+    </a>
+</li>
+<li class="breadcrumb-item active" aria-current="page">
+    {{ queue.name|default:"Queue Detail" }}
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Error Message -->
+    {% if error_message %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Error:</strong> {{ error_message }}
+                <br>
+                <a href="{% url 'annotation_tool:queue_list' %}" class="btn btn-outline-secondary btn-sm mt-2">
+                    ← Back to Queue List
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    
+    <!-- Queue Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">{{ queue.name }}</h3>
+                            {% if queue.description %}
+                            <small class="opacity-75">{{ queue.description }}</small>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <span class="badge bg-light text-dark">{{ total_items }} items</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Queue Button -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> 
+                        Queue ID: <code>{{ queue.queue_id }}</code>
+                    </small>
+                </div>
+                <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#processQueueModal" title="Start processing items in this queue">
+                    <i class="bi bi-play-circle me-2"></i>
+                    Process Queue →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue Items Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            {% if items %}
+            <!-- Responsive table wrapper for horizontal scrolling -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">Item ID</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Completed By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <!-- Apply status-based row coloring with fallback for unknown statuses -->
+                        <tr class="{% if item.status == 'PENDING' %}table-warning{% elif item.status == 'COMPLETED' %}table-success{% elif item.status %}table-light{% endif %}">
+                            <td>
+                                <!-- Display item ID with safe fallback -->
+                                <code class="text-muted">{{ item.item_id|default:"Unknown" }}</code>
+                            </td>
+                            <td>
+                                <!-- Display object type with proper formatting -->
+                                {% if item.object_type %}
+                                    {% if item.object_type == 'TRACE' %}
+                                        <span class="badge bg-info">{{ item.object_type }}</span>
+                                    {% elif item.object_type == 'SESSION' %}
+                                        <span class="badge bg-primary">{{ item.object_type }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ item.object_type }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <!-- Display status with enhanced color coding -->
+                                {% if item.status == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-clock"></i> {{ item.status }}
+                                    </span>
+                                {% elif item.status == 'COMPLETED' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> {{ item.status }}
+                                    </span>
+                                {% elif item.status %}
+                                    <span class="badge bg-secondary">{{ item.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <!-- API doesn't provide completed by user info, show dash as in mockup -->
+                                {% if item.status == 'COMPLETED' and item.completed_at %}
+                                    <span class="text-muted">
+                                        None
+                                        <small class="d-block">{{ item.completed_at|date:"M d, Y" }}</small>
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Enhanced empty state when no items -->
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                </div>
+                <h5 class="text-muted mb-2">No items in this queue</h5>
+                <p class="text-muted mb-4">
+                    This annotation queue is currently empty. Items will appear here when they are added to the queue.
+                </p>
+                {% if total_items == 0 %}
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Total queue items: 0
+                </small>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if page_obj %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Pagination info -->
+                <div>
+                    <small class="text-muted">
+                        <i class="bi bi-list-ol me-1"></i>
+                        {{ total_items }} total items | 
+                        {{ items_per_page }} per page | 
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </small>
+                </div>
+                
+                <!-- Pagination controls (only show if multiple pages) -->
+                {% if page_obj.paginator.num_pages > 1 %}
+                <nav aria-label="Queue items pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                        <!-- Previous button -->
+                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                            {% if page_obj.has_previous %}
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            {% else %}
+                                <span class="page-link" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </span>
+                            {% endif %}
+                        </li>
+                        
+                        <!-- First page -->
+                        {% if page_obj.number > 2 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">1</a>
+                        </li>
+                        {% if page_obj.number > 3 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        {% endif %}
+                        
+                        <!-- Previous page -->
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.previous_page_number }}</a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Current page -->
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }}</span>
+                        </li>
+                        
+                        <!-- Next page -->
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.next_page_number }}</a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Last page -->
+                        {% if page_obj.number < page_obj.paginator.num_pages|add:"-1" %}
+                        {% if page_obj.number < page_obj.paginator.num_pages|add:"-2" %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">{{ page_obj.paginator.num_pages }}</a>
+                        </li>
+                        {% endif %}
+                        
+                        <!-- Next button -->
+                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                            {% if page_obj.has_next %}
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            {% else %}
+                                <span class="page-link" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <div class="row">
+        <div class="col-12">
+            <a href="{% url 'annotation_tool:queue_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Queue List
+            </a>
+        </div>
+    </div>
+
+    <!-- Process Queue Modal (Placeholder) -->
+    <div class="modal fade" id="processQueueModal" tabindex="-1" aria-labelledby="processQueueModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="processQueueModalLabel">Process Queue</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Coming Soon!</strong>
+                        <p class="mb-0 mt-2">Queue processing functionality will be available in a future update.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
