@@ -1,0 +1,152 @@
+{% extends "base_with_sidebar.html" %}
+
+{% block title %}{{ tool_name }} - Admin Tools{% endblock %}
+
+{% block page_title %}{{ tool_name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">
+    <i class="bi bi-pencil-square"></i> Annotation Tool
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Tool Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-pencil-square fs-3 me-3"></i>
+                        <div>
+                            <h3 class="card-title mb-0">{{ tool_name }}</h3>
+                            <small class="opacity-75">{{ description }}</small>
+                        </div>
+                        <div class="ms-auto">
+                            <span class="badge bg-warning text-dark fs-6">{{ status }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hello World Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-success" role="alert">
+                <h4 class="alert-heading">
+                    <i class="bi bi-check-circle"></i> Hello World! 
+                </h4>
+                <p>Welcome to the <strong>{{ tool_name }}</strong>! This is a placeholder view demonstrating the app structure.</p>
+                <hr>
+                <p class="mb-0">
+                    <small>
+                        <i class="bi bi-info-circle"></i> 
+                        This tool is currently under development. Features will be implemented based on your specifications.
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Planned Features -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check"></i> Planned Features
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for feature in features %}
+                        <div class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-gear-fill text-muted me-3"></i>
+                            {{ feature }}
+                            <span class="badge bg-secondary ms-auto">Planned</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Quick Stats
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-12 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="text-primary mb-1">0</h4>
+                                <small class="text-muted">Projects</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <h5 class="text-success mb-1">0</h5>
+                                <small class="text-muted">Annotations</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <h5 class="text-info mb-1">0</h5>
+                                <small class="text-muted">Users</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">Quick Actions</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-sm" disabled>
+                            <i class="bi bi-plus-circle"></i> New Project
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" disabled>
+                            <i class="bi bi-upload"></i> Import Data
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" disabled>
+                            <i class="bi bi-gear"></i> Settings
+                        </button>
+                    </div>
+                    <small class="text-muted mt-2 d-block">
+                        <i class="bi bi-info-circle"></i> Features coming soon!
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Development Info -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 text-info">
+                        <i class="bi bi-code-slash"></i> Developer Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>App Name:</strong> <code>annotation_tool</code></p>
+                    <p class="mb-2"><strong>Template Path:</strong> <code>annotation_tool/templates/annotation_tool/index.html</code></p>
+                    <p class="mb-2"><strong>View Function:</strong> <code>annotation_tool.views.index</code></p>
+                    <p class="mb-2"><strong>URL Pattern:</strong> <code>/tools/annotation/</code></p>
+                    <p class="mb-0"><strong>User:</strong> {{ user.username }} ({{ user.email|default:"No email" }})</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
