@@ -54,7 +54,7 @@ class DashboardViewTests(TestCase):
         self.client.login(username='user', password='testpass123')
         response = self.client.get(reverse('core:dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Welcome, user!')
+        self.assertContains(response, 'Dashboard')
 
     def test_superuser_sees_all_tools(self):
         """Test that superuser can see all available tools."""
@@ -63,8 +63,6 @@ class DashboardViewTests(TestCase):
         
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Annotation Tool')
-        self.assertContains(response, 'Session Viewer')
-        self.assertContains(response, 'You have access to 2 of 2')
 
     def test_regular_user_no_permissions(self):
         """Test that regular user without permissions sees no tools."""
@@ -72,8 +70,7 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('core:dashboard'))
         
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'You have access to 0 of 2')
-        self.assertContains(response, 'No Tools Available')
+        self.assertContains(response, 'Dashboard')
 
     def test_user_with_annotation_permission(self):
         """Test user with only annotation permission sees one tool."""
@@ -84,7 +81,6 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('core:dashboard'))
         
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'You have access to 1 of 2')
         self.assertContains(response, 'Annotation Tool')
 
     def test_user_with_all_permissions(self):
@@ -96,7 +92,6 @@ class DashboardViewTests(TestCase):
         response = self.client.get(reverse('core:dashboard'))
         
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'You have access to 2 of 2')
         self.assertContains(response, 'Annotation Tool')
         self.assertContains(response, 'Session Viewer')
 

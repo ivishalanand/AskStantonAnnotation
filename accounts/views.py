@@ -18,7 +18,6 @@ class CustomLoginView(LoginView):
         """Called when valid form data has been POSTed"""
         # Log the user in
         login(self.request, form.get_user())
-        messages.success(self.request, f'Welcome back, {form.get_user().username}!')
         return super().form_valid(form)
 
 # Password change view
