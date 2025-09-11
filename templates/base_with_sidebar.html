@@ -27,6 +27,8 @@
             color: #fff;
             transition: all 0.3s;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
         #sidebar.active {
@@ -46,6 +48,7 @@
         #sidebar ul.components {
             padding: 20px 0;
             list-style: none;
+            flex: 1;
         }
         
         #sidebar ul li {
@@ -130,15 +133,23 @@
         
         /* User info in sidebar */
         .user-info {
-            padding: 15px 20px;
+            padding: 20px 20px 25px 20px;
             border-top: 1px solid #1a252f;
-            border-bottom: 1px solid #1a252f;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            margin-top: auto;
+            background: rgba(26, 37, 47, 0.3);
         }
         
         .user-info .username {
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-info .username i {
+            margin-right: 8px;
+            font-size: 1.1rem;
         }
     </style>
     
@@ -152,15 +163,6 @@
                 <h3>Stanton Admin Tool</h3>
             </div>
             
-            {% if user.is_authenticated %}
-            <div class="user-info">
-                <div class="username">
-                    <i class="bi bi-person-circle"></i> {{ user.username }}
-                </div>
-                <small class="text-muted">{{ user.email|default:"" }}</small>
-            </div>
-            {% endif %}
-
             <ul class="components">
                 <li {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>
                     <a href="{% url 'core:dashboard' %}">
@@ -206,7 +208,7 @@
                 </li>
                 <li>
                     <a href="{% url 'admin:index' %}" target="_blank">
-                        <i class="bi bi-gear"></i> Django Admin
+                        <i class="bi bi-gear"></i> Superuser Admin
                     </a>
                 </li>
                 {% endif %}
@@ -226,6 +228,15 @@
                     </a>
                 </li>
             </ul>
+            
+            {% if user.is_authenticated %}
+            <div class="user-info">
+                <div class="username">
+                    <i class="bi bi-person-circle"></i> {{ user.username }}
+                </div>
+                <small class="text-muted">{{ user.email|default:"" }}</small>
+            </div>
+            {% endif %}
         </nav>
 
         <!-- Page Content -->

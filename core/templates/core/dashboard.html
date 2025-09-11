@@ -12,20 +12,12 @@
             {% for tool in tools %}
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="rounded-circle bg-{{ tool.color }} text-white p-3 me-3">
-                                <i class="bi {{ tool.icon }} fs-3"></i>
-                            </div>
-                            <div>
-                                <h5 class="card-title mb-0">{{ tool.name }}</h5>
-                                {% if tool.status %}
-                                <span class="badge bg-warning text-dark">{{ tool.status }}</span>
-                                {% endif %}
-                            </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="mb-3">
+                            <h5 class="card-title mb-2">{{ tool.name }}</h5>
                         </div>
-                        <p class="card-text">{{ tool.description }}</p>
-                        <a href="{{ tool.url }}" class="btn btn-{{ tool.color }} btn-sm">
+                        <p class="card-text flex-grow-1">{{ tool.description }}</p>
+                        <a href="{{ tool.url }}" class="btn btn-{{ tool.color }} btn-lg w-100 mt-auto">
                             <i class="bi bi-arrow-right-circle"></i> Open Tool
                         </a>
                     </div>

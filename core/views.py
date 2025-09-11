@@ -18,23 +18,19 @@ def dashboard(request):
     all_tools = [
         {
             'name': 'Annotation Tool',
-            'description': 'Annotate and label data for machine learning and analysis',
-            'icon': 'bi-pencil-square',
+            'description': 'Annotate User Sessions for evaluating Stanton',
             'color': 'primary',
             'url': '/tools/annotation/',
             'url_name': 'annotation_tool:index',
-            'permission': 'annotation_tool.view_annotation',
-            'status': 'Active'
+            'permission': 'annotation_tool.view_annotation'
         },
         {
             'name': 'Session Viewer',
-            'description': 'Monitor active user sessions and manage session data',
-            'icon': 'bi-eye',
-            'color': 'success',
+            'description': 'View User Sessions in pretty format',
+            'color': 'primary',
             'url': '/tools/sessions/',
             'url_name': 'session_viewer:index',
-            'permission': 'session_viewer.view_session',
-            'status': 'Active'
+            'permission': 'session_viewer.view_session'
         }
     ]
     

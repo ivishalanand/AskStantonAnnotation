@@ -6,6 +6,7 @@ This module provides independent parsing functions that can be shared across Dja
 from typing import Dict, Any
 from .langfuse_client import Session
 from datetime import datetime
+import json
 
 
 def get_input_message(trace):
@@ -37,6 +38,19 @@ def filter_output_messages(trace):
     return messages[index + 1:]
 
 
+def format_tool_input(tool_args):
+    """Format tool arguments for clean display."""
+    if not tool_args:
+        return None
+    
+    try:
+        # Try to format as clean JSON
+        return json.dumps(tool_args, indent=2, ensure_ascii=False)
+    except (TypeError, ValueError):
+        # Fallback to string representation
+        return str(tool_args)
+
+
 def simplify_output_messages(messages):
     """
     Simplify output messages into a structured list of:
@@ -66,7 +80,7 @@ def simplify_output_messages(messages):
                     "tool": {
                         "id": tc.get("id"),
                         "name": tc.get("name"),
-                        "input": tc.get("args"),
+                        "input": format_tool_input(tc.get("args")),
                         "output": tool_out.get(tc.get("id")),
                     }
                 })
