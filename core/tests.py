@@ -148,3 +148,271 @@ class PermissionUtilityTests(TestCase):
     def test_invalid_tool_name(self):
         """Test permission checking with invalid tool name."""
         self.assertFalse(user_has_tool_permission(self.regular_user, 'invalid_tool'))
+
+
+class SessionParserTests(TestCase):
+    """Test cases for session parsing functionality."""
+    
+    def setUp(self):
+        """Set up test data for session parsing tests."""
+        # Mock trace data structure
+        self.mock_trace_data = {
+            'id': 'trace_123',
+            'timestamp': '2024-01-01T12:00:00Z',
+            'input': {
+                'messages': [
+                    {
+                        'id': 'msg_001',
+                        'type': 'human',
+                        'content': 'What is the weather in Paris?'
+                    }
+                ]
+            },
+            'output': {
+                'messages': [
+                    {
+                        'id': 'msg_001',
+                        'type': 'human',
+                        'content': 'What is the weather in Paris?'
+                    },
+                    {
+                        'id': 'msg_002',
+                        'type': 'ai',
+                        'content': [
+                            {
+                                'type': 'text',
+                                'text': 'I will check the weather for you.'
+                            }
+                        ],
+                        'tool_calls': [
+                            {
+                                'id': 'tool_001',
+                                'name': 'get_weather',
+                                'args': {'city': 'Paris', 'country': 'France'}
+                            }
+                        ]
+                    },
+                    {
+                        'id': 'msg_003',
+                        'type': 'tool',
+                        'tool_call_id': 'tool_001',
+                        'content': 'Weather in Paris: 22°C, sunny'
+                    },
+                    {
+                        'id': 'msg_004',
+                        'type': 'ai',
+                        'content': [
+                            {
+                                'type': 'text',
+                                'text': 'The weather in Paris is 22°C and sunny.'
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+        
+        # Mock session data
+        self.mock_session_data = {
+            'id': 'session_456',
+            'created_at': '2024-01-01T11:30:00Z',
+            'project_id': 'project_789',
+            'environment': 'production',
+            'traces': [self.mock_trace_data]
+        }
+        
+    def create_mock_trace(self, trace_data):
+        """Create a mock trace object with required attributes."""
+        class MockTrace:
+            def __init__(self, data):
+                self.id = data['id']
+                self.timestamp = data['timestamp']
+                self.input = data['input']
+                self.output = data['output']
+        
+        return MockTrace(trace_data)
+    
+    def create_mock_session(self, session_data):
+        """Create a mock session object with required attributes."""
+        class MockSession:
+            def __init__(self, data, trace_creator):
+                self.id = data['id']
+                self.created_at = data['created_at']
+                self.project_id = data['project_id']
+                self.environment = data['environment']
+                self.traces = [trace_creator(t) for t in data['traces']]
+        
+        return MockSession(session_data, self.create_mock_trace)
+
+    def test_get_input_message(self):
+        """Test extraction of input message from trace."""
+        from core.session_parser import get_input_message
+        
+        trace = self.create_mock_trace(self.mock_trace_data)
+        result = get_input_message(trace)
+        
+        self.assertEqual(result, 'What is the weather in Paris?')
+
+    def test_get_trace_id(self):
+        """Test extraction of trace ID."""
+        from core.session_parser import get_trace_id
+        
+        trace = self.create_mock_trace(self.mock_trace_data)
+        result = get_trace_id(trace)
+        
+        self.assertEqual(result, 'trace_123')
+
+    def test_filter_output_messages(self):
+        """Test filtering of output messages after human input."""
+        from core.session_parser import filter_output_messages
+        
+        trace = self.create_mock_trace(self.mock_trace_data)
+        result = filter_output_messages(trace)
+        
+        # Should return 3 messages after the human input
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0]['type'], 'ai')
+        self.assertEqual(result[1]['type'], 'tool')
+        self.assertEqual(result[2]['type'], 'ai')
+
+    def test_format_tool_input_valid_json(self):
+        """Test formatting of valid tool input arguments."""
+        from core.session_parser import format_tool_input
+        
+        tool_args = {'city': 'Paris', 'country': 'France'}
+        result = format_tool_input(tool_args)
+        
+        self.assertIsInstance(result, str)
+        self.assertIn('Paris', result)
+        self.assertIn('France', result)
+
+    def test_format_tool_input_none(self):
+        """Test formatting of None tool input."""
+        from core.session_parser import format_tool_input
+        
+        result = format_tool_input(None)
+        self.assertIsNone(result)
+
+    def test_format_tool_input_invalid_json(self):
+        """Test formatting of non-serializable tool input."""
+        from core.session_parser import format_tool_input
+        
+        # Create a non-serializable object
+        class NonSerializable:
+            pass
+        
+        tool_args = NonSerializable()
+        result = format_tool_input(tool_args)
+        
+        self.assertIsInstance(result, str)
+
+    def test_simplify_output_messages(self):
+        """Test simplification of output messages."""
+        from core.session_parser import simplify_output_messages
+        
+        messages = [
+            {
+                'type': 'ai',
+                'content': [{'type': 'text', 'text': 'I will help you'}],
+                'tool_calls': [
+                    {
+                        'id': 'tool_001',
+                        'name': 'get_weather',
+                        'args': {'city': 'Paris'}
+                    }
+                ]
+            },
+            {
+                'type': 'tool',
+                'tool_call_id': 'tool_001',
+                'content': 'Weather data'
+            },
+            {
+                'type': 'ai',
+                'content': [{'type': 'text', 'text': 'The weather is nice'}]
+            }
+        ]
+        
+        result = simplify_output_messages(messages)
+        
+        self.assertEqual(len(result), 3)
+        self.assertIn('ai', result[0])
+        self.assertEqual(result[0]['ai'], 'I will help you')
+        self.assertIn('tool', result[1])
+        self.assertEqual(result[1]['tool']['name'], 'get_weather')
+        self.assertEqual(result[1]['tool']['output'], 'Weather data')
+        self.assertIn('ai', result[2])
+        self.assertEqual(result[2]['ai'], 'The weather is nice')
+
+    def test_build_chat_history(self):
+        """Test building chat history from session."""
+        from core.session_parser import build_chat_history
+        
+        session = self.create_mock_session(self.mock_session_data)
+        result = build_chat_history(session)
+        
+        self.assertEqual(len(result), 1)
+        self.assertIn('trace_id', result[0])
+        self.assertIn('input', result[0])
+        self.assertIn('output', result[0])
+        self.assertEqual(result[0]['trace_id'], 'trace_123')
+        self.assertEqual(result[0]['input'], 'What is the weather in Paris?')
+
+    def test_get_session_chat_data(self):
+        """Test main session parsing function."""
+        from core.session_parser import get_session_chat_data
+        
+        session = self.create_mock_session(self.mock_session_data)
+        result = get_session_chat_data(session)
+        
+        # Check structure
+        expected_keys = ['session_id', 'created_at', 'project_id', 'environment', 'traces', 'total_traces']
+        for key in expected_keys:
+            self.assertIn(key, result)
+        
+        # Check values
+        self.assertEqual(result['session_id'], 'session_456')
+        self.assertEqual(result['project_id'], 'project_789')
+        self.assertEqual(result['environment'], 'production')
+        self.assertEqual(result['total_traces'], 1)
+        self.assertIsInstance(result['traces'], list)
+
+    def test_empty_trace_handling(self):
+        """Test handling of trace with no messages."""
+        from core.session_parser import filter_output_messages
+        
+        empty_trace_data = {
+            'id': 'empty_trace',
+            'timestamp': '2024-01-01T12:00:00Z',
+            'input': {'messages': [{'id': 'msg_001', 'type': 'human', 'content': 'Hello'}]},
+            'output': {'messages': []}
+        }
+        
+        trace = self.create_mock_trace(empty_trace_data)
+        result = filter_output_messages(trace)
+        
+        self.assertEqual(result, [])
+
+    def test_multiple_traces_sorting(self):
+        """Test that traces are sorted by timestamp."""
+        from core.session_parser import build_chat_history
+        
+        # Create traces with different timestamps
+        trace1_data = dict(self.mock_trace_data)
+        trace1_data['id'] = 'trace_1'
+        trace1_data['timestamp'] = '2024-01-01T12:00:00Z'
+        
+        trace2_data = dict(self.mock_trace_data)
+        trace2_data['id'] = 'trace_2'
+        trace2_data['timestamp'] = '2024-01-01T11:00:00Z'  # Earlier
+        
+        session_data = dict(self.mock_session_data)
+        session_data['traces'] = [trace1_data, trace2_data]  # Add in wrong order
+        
+        session = self.create_mock_session(session_data)
+        result = build_chat_history(session)
+        
+        # Should be sorted by timestamp (earliest first)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]['trace_id'], 'trace_2')  # Earlier timestamp
+        self.assertEqual(result[1]['trace_id'], 'trace_1')  # Later timestamp
