@@ -67,7 +67,7 @@ MIDDLEWARE = [
     'accounts.middleware.ForcePasswordChangeMiddleware',
 ]
 
-ROOT_URLCONF = 'annotation.urls'
+ROOT_URLCONF = 'admin.urls'
 
 TEMPLATES = [
     {
@@ -85,7 +85,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'annotation.wsgi.application'
+WSGI_APPLICATION = 'admin.wsgi.application'
 
 
 # Database
