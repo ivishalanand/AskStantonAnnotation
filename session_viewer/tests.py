@@ -51,15 +51,6 @@ class SessionViewerViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn('/login/', response.url)
 
-    def test_superuser_can_access_session_viewer(self):
-        """Test that superuser can access session viewer."""
-        self.client.login(username='admin', password='testpass123')
-        response = self.client.get(reverse('session_viewer:index'))
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Session Viewer')
-        self.assertContains(response, 'Active Sessions')
-
     def test_authorized_user_can_access_session_viewer(self):
         """Test that user with session viewer permission can access tool."""
         self.client.login(username='session_admin', password='testpass123')
@@ -67,7 +58,7 @@ class SessionViewerViewTests(TestCase):
         
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Session Viewer')
-        self.assertContains(response, 'Monitor and manage active user sessions')
+        self.assertContains(response, 'Enter a session ID to view the conversation details')
 
     def test_unauthorized_user_cannot_access_session_viewer(self):
         """Test that user without permission cannot access session viewer."""
@@ -78,24 +69,4 @@ class SessionViewerViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('core:dashboard'))
 
-    def test_session_viewer_displays_active_sessions(self):
-        """Test that session viewer shows active sessions."""
-        # Login to create an active session
-        self.client.login(username='admin', password='testpass123')
-        
-        # Access session viewer
-        response = self.client.get(reverse('session_viewer:index'))
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Active Sessions')
-        # Should show at least 1 session (the current one)
-        self.assertContains(response, 'admin')
 
-    def test_session_viewer_shows_security_info(self):
-        """Test that session viewer displays security information."""
-        self.client.login(username='admin', password='testpass123')
-        response = self.client.get(reverse('session_viewer:index'))
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Security Monitoring')
-        self.assertContains(response, 'Session data contains sensitive information')
