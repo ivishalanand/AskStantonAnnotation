@@ -5,7 +5,7 @@ import asyncio
 from core.langfuse_client import get_session_by_id, LangfuseAPIError
 from core.session_parser import get_session_chat_data
 
-
+@login_required
 def index(request):
     return render(request, 'session_viewer/index.html')
 

@@ -3,152 +3,101 @@ Session data parser for converting Langfuse session data into chat-like format.
 This module provides independent parsing functions that can be shared across Django apps.
 """
 
-from typing import Dict, List, Any, Optional
-from .langfuse_client import Session, Trace
+from typing import Dict, Any
+from .langfuse_client import Session
+from datetime import datetime
 
 
-def extract_message_content(message_data: Dict[str, Any]) -> str:
-    """
-    Extract readable content from a message object.
-    Handles both simple string content and complex message structures.
-    
-    Args:
-        message_data: Message data from trace input/output
-        
-    Returns:
-        str: Extracted message content
-    """
-    if isinstance(message_data, str):
-        return message_data
-    
-    if isinstance(message_data, dict):
-        # Handle LangChain message format
-        if 'content' in message_data:
-            content = message_data['content']
-            if isinstance(content, str):
-                return content
-            elif isinstance(content, list):
-                # Handle content with multiple parts (e.g., text + images)
-                text_parts = []
-                for part in content:
-                    if isinstance(part, dict) and part.get('type') == 'text':
-                        text_parts.append(part.get('text', ''))
-                    elif isinstance(part, str):
-                        text_parts.append(part)
-                return '\n'.join(text_parts)
-        
-        # Handle direct text fields
-        if 'text' in message_data:
-            return message_data['text']
-        
-        # Try to convert dict to readable format
-        return str(message_data)
-    
-    return str(message_data)
+def get_input_message(trace):
+    """Return the first input message content from a trace."""
+    return trace.input["messages"][0]["content"]
 
 
-def parse_trace_messages(trace: Trace) -> List[Dict[str, Any]]:
+def get_trace_id(trace):
+    """Return the trace ID."""
+    return trace.id
+
+
+def filter_output_messages(trace):
     """
-    Parse a trace's input/output into individual messages.
-    
-    Args:
-        trace: Trace object containing input/output data
-        
-    Returns:
-        List of message dictionaries with 'type', 'content', and 'timestamp'
+    Return all output messages after the human input message.
     """
-    messages = []
-    timestamp = trace.timestamp
-    
-    # Parse input messages
-    if trace.input and 'messages' in trace.input:
-        for msg in trace.input['messages']:
-            if isinstance(msg, dict):
-                message_type = msg.get('type', 'unknown')
-                content = extract_message_content(msg)
-                
-                # Map LangChain types to our display types
-                if message_type == 'human':
-                    display_type = 'user'
-                elif message_type == 'ai':
-                    display_type = 'assistant'
-                else:
-                    display_type = 'system'
-                
-                messages.append({
-                    'type': display_type,
-                    'content': content,
-                    'timestamp': timestamp,
-                    'trace_id': trace.id
+    messages = trace.output["messages"]
+    target_id = trace.input["messages"][0]["id"]
+
+    # Find index of the target human message
+    index = next(
+        (i for i, msg in enumerate(messages)
+         if msg.get("type") == "human" and msg.get("id") == target_id),
+        None,
+    )
+
+    if index is None:
+        return []
+    return messages[index + 1:]
+
+
+def simplify_output_messages(messages):
+    """
+    Simplify output messages into a structured list of:
+    - AI text responses
+    - Tool calls (with input + output)
+    """
+    tool_out = {
+        m.get("tool_call_id"): m.get("content")
+        for m in messages if m.get("type") == "tool"
+    }
+
+    simplified = []
+    for m in messages:
+        if m.get("type") == "ai":
+            # Capture plain text
+            texts = [
+                c.get("text", "").strip()
+                for c in m.get("content", [])
+                if isinstance(c, dict) and c.get("type") == "text"
+            ]
+            if texts:
+                simplified.append({"ai": " ".join(texts)})
+
+            # Capture tool uses
+            for tc in m.get("tool_calls", []):
+                simplified.append({
+                    "tool": {
+                        "id": tc.get("id"),
+                        "name": tc.get("name"),
+                        "input": tc.get("args"),
+                        "output": tool_out.get(tc.get("id")),
+                    }
                 })
-    
-    # Parse output messages
-    if trace.output and 'messages' in trace.output:
-        for msg in trace.output['messages']:
-            if isinstance(msg, dict):
-                message_type = msg.get('type', 'unknown')
-                content = extract_message_content(msg)
-                
-                # Skip duplicate user messages from output
-                if message_type == 'human':
-                    continue
-                
-                # Map LangChain types to our display types
-                if message_type == 'ai':
-                    display_type = 'assistant'
-                else:
-                    display_type = 'system'
-                
-                messages.append({
-                    'type': display_type,
-                    'content': content,
-                    'timestamp': timestamp,
-                    'trace_id': trace.id
-                })
-    
-    return messages
+
+    return simplified
 
 
-def parse_session_to_chat_format(session: Session) -> Dict[str, Dict[str, Any]]:
+def build_chat_history(session):
     """
-    Parse session data into chat format organized by thread_id.
-    
-    Args:
-        session: Session object with traces
-        
-    Returns:
-        Dict with structure: {thread_id: {messages: [...], metadata: {...}}}
+    Given a session object, return the full chat history as
+    a list of dicts: [{trace_id, input, output}, ...]
     """
-    threads = {}
-    
-    for trace in session.traces:
-        # Use session_id as thread_id, or trace metadata if available
-        thread_id = trace.session_id or session.id
-        if trace.metadata and 'thread_id' in trace.metadata:
-            thread_id = trace.metadata['thread_id']
-        
-        # Initialize thread if not exists
-        if thread_id not in threads:
-            threads[thread_id] = {
-                'messages': [],
-                'metadata': {
-                    'thread_id': thread_id,
-                    'session_id': session.id,
-                    'created_at': session.created_at,
-                    'project_id': session.project_id,
-                    'environment': session.environment
-                }
-            }
-        
-        # Parse messages from this trace
-        trace_messages = parse_trace_messages(trace)
-        threads[thread_id]['messages'].extend(trace_messages)
-    
-    # Sort messages by timestamp within each thread
-    for thread_data in threads.values():
-        thread_data['messages'].sort(key=lambda x: x['timestamp'])
-    
-    return threads
+    chat_history = []
+    traces_sorted = sorted(
+        session.traces,
+        key=lambda t: datetime.fromisoformat(t.timestamp.replace("Z", "+00:00"))
+    )
+
+    for trace in traces_sorted:
+        input_content = get_input_message(trace)
+        filtered_output_messages = filter_output_messages(trace)
+        output_content = simplify_output_messages(filtered_output_messages)
+
+        chat_history.append({
+            "trace_id": get_trace_id(trace),
+            "input": input_content,
+            "output": output_content,
+        })
+    return chat_history
+
+
 
 
 def get_session_chat_data(session: Session) -> Dict[str, Any]:
@@ -161,14 +110,50 @@ def get_session_chat_data(session: Session) -> Dict[str, Any]:
     Returns:
         Dict containing parsed chat data and session metadata
     """
-    chat_threads = parse_session_to_chat_format(session)
+    chat_traces = build_chat_history(session)
     
     return {
         'session_id': session.id,
         'created_at': session.created_at,
         'project_id': session.project_id,
         'environment': session.environment,
-        'threads': chat_threads,
-        'total_threads': len(chat_threads),
-        'total_messages': sum(len(thread['messages']) for thread in chat_threads.values())
+        'traces': chat_traces,
+        'total_traces': len(chat_traces),
     }
+
+
+# Structure of the Chat History
+# chat_history = [
+#     {
+#         "trace_id": str,              # Unique ID of the trace
+#         "input": str,                 # The first human input message
+#         "output": [                   # List of AI messages and tool interactions (in order)
+#             {"ai": str},              # Plain AI text response
+#             {"tool": {                # Tool usage entry
+#                 "id": str,            # Tool call ID
+#                 "input": dict,        # Arguments passed to the tool
+#                 "output": Any         # Tool’s response (depends on the tool)
+#             }},
+#             {"ai": str},              # Another AI text message (if present)
+#             # ... more items in sequence
+#         ]
+#     },
+#     # ... next trace
+# ]
+
+
+
+# eg.
+# {
+#     "trace_id": "abc123",
+#     "input": "What’s the weather in Paris?",
+#     "output": [
+#         {"ai": "Let me check that for you."},
+#         {"tool": {
+#             "id": "toolu_01LHvQvJcDwkSMJc6pnb49h4",
+#             "input": {"search_query": "weather in Paris"},
+#             "output": "Sunny, 25°C"
+#         }},
+#         {"ai": "The weather in Paris is sunny, around 25°C."}
+#     ]
+# }
