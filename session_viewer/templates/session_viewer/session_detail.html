@@ -35,36 +35,43 @@
                     </div>
                 </div>
 
-                <!-- AI/Tool Responses -->
-                {% for output_item in trace.output %}
-                    {% if output_item.ai %}
-                        <div class="message-row ai-row">
-                            <div class="message ai-message markdown-content">
-                                {{ output_item.ai }}
-                            </div>
-                        </div>
-                    {% elif output_item.tool %}
-                        <div class="message-row tool-row">
-                            <div class="message tool-message">
-                                <div class="tool-name">
-                                    <i class="bi bi-tools"></i> {{ output_item.tool.name|default:output_item.tool.id }}
-                                </div>
-                                {% if output_item.tool.input %}
-                                    <div class="tool-section">
-                                        <small><strong>Input:</strong></small>
-                                        <div class="tool-content">{{ output_item.tool.input|pprint }}</div>
+                <!-- AI Response with Tools -->
+                {% if trace.output %}
+                    <div class="message-row ai-row">
+                        <div class="message ai-message">
+                            {% for output_item in trace.output %}
+                                {% if output_item.ai %}
+                                    <div class="markdown-content">
+                                        {{ output_item.ai }}
+                                    </div>
+                                {% elif output_item.tool %}
+                                    <div class="tool-inline">
+                                        <div class="tool-summary" onclick="toggleTool(this)">
+                                            <span>
+                                                <i class="bi bi-tools"></i> {{ output_item.tool.name|default:output_item.tool.id }}
+                                            </span>
+                                            <i class="bi bi-chevron-down expand-icon"></i>
+                                        </div>
+                                        <div class="tool-details" style="display: none;">
+                                            {% if output_item.tool.input %}
+                                                <div class="tool-section">
+                                                    <small><strong>Input:</strong></small>
+                                                    <div class="tool-content">{{ output_item.tool.input|pprint }}</div>
+                                                </div>
+                                            {% endif %}
+                                            {% if output_item.tool.output %}
+                                                <div class="tool-section">
+                                                    <small><strong>Output:</strong></small>
+                                                    <div class="tool-content">{{ output_item.tool.output }}</div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 {% endif %}
-                                {% if output_item.tool.output %}
-                                    <div class="tool-section">
-                                        <small><strong>Output:</strong></small>
-                                        <div class="tool-content">{{ output_item.tool.output }}</div>
-                                    </div>
-                                {% endif %}
-                            </div>
+                            {% endfor %}
                         </div>
-                    {% endif %}
-                {% endfor %}
+                    </div>
+                {% endif %}
             {% empty %}
                 <div class="empty-chat">
                     <i class="bi bi-chat-x"></i>
@@ -137,18 +144,45 @@
     border: 1px solid #e1e8ed;
 }
 
-.tool-message {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffd60a;
-    border-radius: 12px;
-    max-width: 90%;
+.tool-inline {
+    margin: 8px 0;
+    border-left: 3px solid #6c5ce7;
+    padding-left: 8px;
 }
 
-.tool-name {
-    font-weight: 600;
-    margin-bottom: 8px;
+.tool-summary {
+    background-color: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
     color: #6c5ce7;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #e9ecef;
+}
+
+.tool-summary:hover {
+    background-color: #e9ecef;
+}
+
+.expand-icon {
+    transition: transform 0.2s;
+    font-size: 10px;
+}
+
+.expand-icon.expanded {
+    transform: rotate(180deg);
+}
+
+.tool-details {
+    margin-top: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px;
 }
 
 .tool-section {
@@ -290,5 +324,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function toggleTool(element) {
+    const details = element.nextElementSibling;
+    const icon = element.querySelector('.expand-icon');
+    
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        icon.classList.add('expanded');
+    } else {
+        details.style.display = 'none';
+        icon.classList.remove('expanded');
+    }
+}
 </script>
 {% endblock %}
