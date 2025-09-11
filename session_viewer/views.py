@@ -4,13 +4,16 @@ from django.http import HttpResponse
 import asyncio
 from core.langfuse_client import get_session_by_id, LangfuseAPIError
 from core.session_parser import get_session_chat_data
+from core.permissions import require_tool_permission
 
 @login_required
+@require_tool_permission('session_viewer')
 def index(request):
     return render(request, 'session_viewer/index.html')
 
 
 @login_required
+@require_tool_permission('session_viewer')
 def session_detail(request, session_id):
     """
     Display detailed view of a session with chat-like interface.
