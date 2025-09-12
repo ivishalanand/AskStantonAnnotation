@@ -131,7 +131,7 @@ async def fetch_queue_items(
     queue_id: str, 
     status: Optional[str] = None, 
     page: int = 1, 
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Fetch items for a specific annotation queue.

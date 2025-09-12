@@ -72,7 +72,7 @@
                 </div>
                 <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#processQueueModal" title="Start processing items in this queue">
                     <i class="bi bi-play-circle me-2"></i>
-                    Process Queue →
+                    Process Annotation Queue →
                 </button>
             </div>
         </div>
@@ -88,9 +88,10 @@
                     <thead class="table-dark">
                         <tr>
                             <th scope="col">Item ID</th>
+                            <th scope="col">Object ID</th>
                             <th scope="col">Type</th>
                             <th scope="col">Status</th>
-                            <th scope="col">Completed By</th>
+                            <th scope="col">Annotate</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -100,6 +101,10 @@
                             <td>
                                 <!-- Display item ID with safe fallback -->
                                 <code class="text-muted">{{ item.item_id|default:"Unknown" }}</code>
+                            </td>
+                            <td>
+                                <!-- Display object ID with safe fallback -->
+                                <code class="text-primary">{{ item.object_id|default:"Unknown" }}</code>
                             </td>
                             <td>
                                 <!-- Display object type with proper formatting -->
@@ -132,15 +137,11 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <!-- API doesn't provide completed by user info, show dash as in mockup -->
-                                {% if item.status == 'COMPLETED' and item.completed_at %}
-                                    <span class="text-muted">
-                                        None
-                                        <small class="d-block">{{ item.completed_at|date:"M d, Y" }}</small>
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
+                                <!-- Annotate button - navigates to annotation interface -->
+                                <a href="{% url 'annotation_tool:annotate_item' queue_id=queue.queue_id object_type=item.object_type|lower object_id=item.object_id %}" 
+                                   class="btn btn-secondary btn-sm">
+                                    Annotate
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
