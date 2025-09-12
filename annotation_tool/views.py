@@ -116,18 +116,20 @@ def queue_detail(request, queue_id):
             total_items = 0
             
             if not items_response.get('error'):
-                # Convert item data to model instances
+                # Convert item data to model instances, filter for SESSION only, TODO: might update for trace later
                 for item_data in items_response.get('data', []):
                     try:
-                        item = AnnotationQueueItem.from_api_data(item_data)
-                        items.append(item)
+                        # Only include SESSION items
+                        if item_data.get('objectType') == 'SESSION':
+                            item = AnnotationQueueItem.from_api_data(item_data)
+                            items.append(item)
                     except Exception as e:
                         logger.warning(f"Failed to parse item data: {e}")
                         continue
                 
                 # Get pagination metadata from API response
                 meta = items_response.get('meta', {})
-                total_items = meta.get('totalItems', 0)
+                total_items = len(items)
                 current_page = meta.get('page', 1)
                 total_pages = meta.get('totalPages', 1)
                 

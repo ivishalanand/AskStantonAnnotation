@@ -88,6 +88,7 @@
                     <thead class="table-dark">
                         <tr>
                             <th scope="col">Item ID</th>
+                            <th scope="col">Object ID</th>
                             <th scope="col">Type</th>
                             <th scope="col">Status</th>
                             <th scope="col">Completed By</th>
@@ -100,6 +101,10 @@
                             <td>
                                 <!-- Display item ID with safe fallback -->
                                 <code class="text-muted">{{ item.item_id|default:"Unknown" }}</code>
+                            </td>
+                            <td>
+                                <!-- Display object ID with safe fallback -->
+                                <code class="text-primary">{{ item.object_id|default:"Unknown" }}</code>
                             </td>
                             <td>
                                 <!-- Display object type with proper formatting -->
