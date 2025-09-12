@@ -8,8 +8,11 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from core.permissions import require_tool_permission
+from core.langfuse_client import get_session_by_id, LangfuseAPIError
+from core.session_parser import get_session_chat_data
 from .utils import get_annotation_queues, get_annotation_queue, get_queue_items
 from .models import AnnotationQueue, AnnotationQueueItem
+import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -184,14 +187,35 @@ def annotate_item(request, queue_id, object_type, object_id):
         object_type (str): Type of object being annotated (session/trace)
         object_id (str): The unique identifier of the object to annotate
         
-    This view provides the annotation interface for individual queue items.
-    Currently shows placeholder content - annotation functionality to be implemented.
+    For SESSION objects, displays the session chat data.
+    For TRACE objects, shows placeholder content.
     """
     context = {
         'tool_name': f'Annotate {object_type.title()} - Admin Tools',
         'queue_id': queue_id,
         'object_type': object_type,
         'object_id': object_id,
+        'chat_data': None,
+        'error': None,
     }
+    
+    # Fetch and display session data for SESSION objects
+    if object_type.lower() == 'session':
+        try:
+            # Fetch session data using async client
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            session = loop.run_until_complete(get_session_by_id(object_id))
+            loop.close()
+            
+            # Parse session data into chat format
+            context['chat_data'] = get_session_chat_data(session)
+            
+        except LangfuseAPIError as e:
+            logger.error(f"Failed to fetch session {object_id}: {str(e)}")
+            context['error'] = f"Failed to load session: {str(e)}"
+        except Exception as e:
+            logger.error(f"Unexpected error fetching session {object_id}: {str(e)}")
+            context['error'] = f"Unexpected error: {str(e)}"
     
     return render(request, 'annotation_tool/annotate_item.html', context)
