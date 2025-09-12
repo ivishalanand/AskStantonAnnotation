@@ -116,20 +116,18 @@ def queue_detail(request, queue_id):
             total_items = 0
             
             if not items_response.get('error'):
-                # Convert item data to model instances, filter for SESSION only, TODO: might update for trace later
+                # Convert item data to model instances
                 for item_data in items_response.get('data', []):
                     try:
-                        # Only include SESSION items
-                        if item_data.get('objectType') == 'SESSION':
-                            item = AnnotationQueueItem.from_api_data(item_data)
-                            items.append(item)
+                        item = AnnotationQueueItem.from_api_data(item_data)
+                        items.append(item)
                     except Exception as e:
                         logger.warning(f"Failed to parse item data: {e}")
                         continue
                 
                 # Get pagination metadata from API response
                 meta = items_response.get('meta', {})
-                total_items = len(items)
+                total_items = meta.get('totalItems', 0)
                 current_page = meta.get('page', 1)
                 total_pages = meta.get('totalPages', 1)
                 
@@ -173,3 +171,27 @@ def queue_detail(request, queue_id):
             }
     
     return render(request, 'annotation_tool/queue_detail.html', context)
+
+
+@login_required
+@require_tool_permission('annotation')
+def annotate_item(request, queue_id, object_type, object_id):
+    """
+    Display annotation interface for a specific queue item.
+    
+    Args:
+        queue_id (str): The unique identifier of the annotation queue
+        object_type (str): Type of object being annotated (session/trace)
+        object_id (str): The unique identifier of the object to annotate
+        
+    This view provides the annotation interface for individual queue items.
+    Currently shows placeholder content - annotation functionality to be implemented.
+    """
+    context = {
+        'tool_name': f'Annotate {object_type.title()} - Admin Tools',
+        'queue_id': queue_id,
+        'object_type': object_type,
+        'object_id': object_id,
+    }
+    
+    return render(request, 'annotation_tool/annotate_item.html', context)
