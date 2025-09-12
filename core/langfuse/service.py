@@ -58,8 +58,12 @@ class LangfuseService:
         return await self._scoring.create_score(trace_id, config_id, name, value, comment)
     
     @sync_wrapper
-    async def create_comment(self, project_id: str, object_id: str, object_type: str, content: str, author_user_id: str = None):
-        return await self._scoring.create_comment(project_id, object_id, object_type, content, author_user_id)
+    async def create_trace_comment(self, trace_id: str, comment_text: str):
+        return await self._scoring.create_trace_comment(trace_id, comment_text)
+    
+    @sync_wrapper
+    async def create_session_comment(self, session_id: str, comment_text: str):
+        return await self._scoring.create_session_comment(session_id, comment_text)
     
     # Trace methods
     @sync_wrapper

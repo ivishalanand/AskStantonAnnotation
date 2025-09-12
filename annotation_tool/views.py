@@ -7,6 +7,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_protect
 from core.permissions import require_tool_permission
 from core.langfuse.service import langfuse_service
 from core.langfuse.exceptions import LangfuseAPIError
@@ -227,3 +229,22 @@ def annotate_object(request, queue_id, object_type, object_id):
             context['error'] = f"Unexpected error: {str(e)}"
     
     return render(request, 'annotation_tool/annotate_object.html', context)
+
+
+@login_required
+@require_tool_permission('annotation')
+@csrf_protect
+def submit_comment(request):
+    if request.method == 'POST':
+        trace_id = request.POST.get('trace_id')
+        comment_text = request.POST.get('comment_text')
+        
+        if not trace_id or not comment_text:
+            return JsonResponse({'success': False, 'error': 'Missing data'})
+            
+        try:
+            langfuse_service.create_trace_comment(trace_id, comment_text)
+            return JsonResponse({'success': True})
+        except Exception as e:
+            logger.error(f"Failed to submit comment: {str(e)}")
+            return JsonResponse({'success': False, 'error': str(e)})
