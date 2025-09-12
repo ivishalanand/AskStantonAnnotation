@@ -34,13 +34,6 @@
                 <!-- Display session chat data using shared template -->
                 {% include 'includes/session_chat_display.html' %}
                 
-                <!-- Back Button -->
-                <div class="mt-3">
-                    <a href="{% url 'annotation_tool:queue_detail' queue_id %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-2"></i>
-                        Back to Queue
-                    </a>
-                </div>
             {% else %}
                 <!-- Placeholder for TRACE objects TODO: update this when we want to add trace -->
                 <div class="card">
@@ -51,13 +44,6 @@
                             This {{ object_type }} annotation interface will be implemented in future iterations.
                         </p>
                         
-                        <!-- Back Button -->
-                        <div class="mt-4">
-                            <a href="{% url 'annotation_tool:queue_detail' queue_id %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-2"></i>
-                                Back to Queue
-                            </a>
-                        </div>
                     </div>
                 </div>
             {% endif %}
