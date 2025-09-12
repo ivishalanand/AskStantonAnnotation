@@ -23,7 +23,7 @@ Required context variables: chat_data (with .traces), error (optional)
                 <!-- AI Response with Tools -->
                 {% if trace.output %}
                     <div class="message-row ai-row">
-                        <div class="message ai-message" oncontextmenu="showContextMenu(event, this)">
+                        <div class="message ai-message" data-trace-id="{{ trace.trace_id }}" oncontextmenu="showContextMenu(event, this)">
                             {% for output_item in trace.output %}
                                 {% if output_item.ai %}
                                     <div class="markdown-content">
@@ -79,6 +79,9 @@ Required context variables: chat_data (with .traces), error (optional)
     <div class="context-option annotate-option" onclick="openAnnotationDrawer()">Annotate</div>
     <div class="context-option comment-option" onclick="openCommentDrawer()">Comment</div>
 </div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast">Feedback saved</div>
 
 <!-- Annotation Drawer -->
 <div id="annotationDrawer" class="annotation-drawer">
@@ -377,6 +380,26 @@ Required context variables: chat_data (with .traces), error (optional)
     cursor: pointer;
 }
 
+/* Toast Notification */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .chat-messages {
@@ -491,8 +514,35 @@ function openCommentDrawer() {
 
 function saveComment() {
     const comment = document.getElementById('commentBox').value;
-    alert('Comment saved: ' + comment);
-    document.getElementById('commentBox').value = '';
+    const traceId = currentHighlightedMessage?.getAttribute('data-trace-id');
+    
+    if (!traceId || !comment.trim()) {
+        alert('Please select a message and enter a comment');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('trace_id', traceId);
+    formData.append('comment_text', comment);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch('/tools/annotation/submit-comment/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Feedback saved');
+            document.getElementById('commentBox').value = '';
+            closeAnnotationDrawer();
+        } else {
+            alert('Error saving comment: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Network error: ' + error);
+    });
 }
 
 function handleCommentKeydown(event) {
@@ -508,6 +558,15 @@ function closeAnnotationDrawer() {
         currentHighlightedMessage.classList.remove('highlighted');
         currentHighlightedMessage = null;
     }
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2000);
 }
 
 // Hide context menu and drawer when clicking elsewhere

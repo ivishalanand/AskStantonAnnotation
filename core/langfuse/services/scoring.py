@@ -35,22 +35,22 @@ class ScoringService:
         response = await self.client.post("/scores", data)
         return response
     
-    async def create_comment(
-        self,
-        project_id: str,
-        object_id: str,
-        object_type: str,
-        content: str,
-        author_user_id: Optional[str] = None
-    ) -> dict:
-        data = {
-            "projectId": project_id,
-            "objectType": object_type,
-            "objectId": object_id,
-            "content": content
-        }
-        if author_user_id:
-            data["authorUserId"] = author_user_id
-        
-        response = await self.client.post("/comments", data)
-        return response
+    async def create_trace_comment(self, trace_id: str, comment_text: str) -> dict:
+        """Create a comment for a trace using the COMMENT-trace config."""
+        return await self.create_score(
+            trace_id=trace_id,
+            config_id="cmfgu6usw000cad0740htzljh",
+            name="COMMENT-trace",
+            value=1,
+            comment=comment_text
+        )
+    
+    async def create_session_comment(self, session_id: str, comment_text: str) -> dict:
+        """Create a comment for a session using the COMMENT-session config."""
+        return await self.create_score(
+            trace_id=session_id,
+            config_id="cmfgu6usw000cad0740htzljh",  # Change it later with new config created for sessions.
+            name="COMMENT-session",
+            value=1,
+            comment=comment_text
+        )

@@ -23,4 +23,7 @@ urlpatterns = [
     
     # Annotation interface URL
     path('queues/<str:queue_id>/annotate/<str:object_type>/<str:object_id>/', views.annotate_object, name='annotate_object'),
+    
+    # Comment submission API
+    path('submit-comment/', views.submit_comment, name='submit_comment'),
 ]
