@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-import asyncio
-from core.langfuse_client import get_session_by_id, LangfuseAPIError
+from core.langfuse.service import langfuse_service
+from core.langfuse.exceptions import LangfuseAPIError
 from core.session_parser import get_session_chat_data
 from core.permissions import require_tool_permission
 
@@ -23,11 +23,19 @@ def session_detail(request, session_id):
         session_id: The unique identifier of the session to display
     """
     try:
-        # Fetch session data using async client
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        session = loop.run_until_complete(get_session_by_id(session_id))
-        loop.close()
+        # Fetch session data using service layer
+        session_data = langfuse_service.get_session(session_id)
+        # Convert to Session object for parser compatibility
+        from core.langfuse.models import Session
+        session = Session(
+            id=session_data['id'],
+            created_at=session_data['createdAt'],
+            updated_at=session_data.get('updatedAt', ''),
+            project_id=session_data['projectId'],
+            public=session_data.get('public', False),
+            bookmarked=session_data.get('bookmarked', False),
+            traces=session_data.get('traces', [])
+        )
         
         # Parse session data into chat format
         chat_data = get_session_chat_data(session)

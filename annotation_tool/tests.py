@@ -100,29 +100,13 @@ class AnnotationToolViewTests(TestCase):
 class AnnotationUtilsTests(TestCase):
     """Test cases for annotation tool utilities."""
     
-    def test_get_auth_header_no_credentials(self):
-        """Test auth header generation fails without credentials."""
-        from annotation_tool.utils import get_auth_header, LangfuseAPIError
-        with self.settings(LANGFUSE_PUBLIC_KEY=None):
-            with self.assertRaises(LangfuseAPIError):
-                get_auth_header()
-    
-    def test_get_auth_header_with_credentials(self):
-        """Test auth header generation with credentials."""
-        from annotation_tool.utils import get_auth_header
-        with self.settings(LANGFUSE_PUBLIC_KEY='test_key', LANGFUSE_SECRET_KEY='test_secret'):
-            header = get_auth_header()
-            self.assertIsInstance(header, str)
-            # Should be base64 encoded 
-            import base64
-            decoded = base64.b64decode(header).decode('ascii')
-            self.assertEqual(decoded, 'test_key:test_secret')
+    # Note: Auth header tests removed - now handled internally by the service layer
 
     def test_api_error_handling(self):
         """Test that API errors are handled gracefully."""
         from annotation_tool.utils import get_annotation_queues
         # Without proper credentials, should return error dict
-        with self.settings(LANGFUSE_PUBLIC_KEY=None):
+        with self.settings(LANGFUSE_PUBLIC_KEY=None, LANGFUSE_SECRET_KEY=None):
             result = get_annotation_queues()
             self.assertTrue(result.get('error'))
             self.assertIn('message', result)

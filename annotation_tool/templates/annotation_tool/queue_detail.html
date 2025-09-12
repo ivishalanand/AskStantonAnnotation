@@ -138,7 +138,7 @@
                             </td>
                             <td>
                                 <!-- Annotate button - navigates to annotation interface -->
-                                <a href="{% url 'annotation_tool:annotate_item' queue_id=queue.queue_id object_type=item.object_type|lower object_id=item.object_id %}" 
+                                <a href="{% url 'annotation_tool:annotate_object' queue_id=queue.queue_id object_type=item.object_type|lower object_id=item.object_id %}" 
                                    class="btn btn-secondary btn-sm">
                                     Annotate
                                 </a>

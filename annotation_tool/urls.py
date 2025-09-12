@@ -22,5 +22,5 @@ urlpatterns = [
     path('queues/<str:queue_id>/', views.queue_detail, name='queue_detail'),
     
     # Annotation interface URL
-    path('queues/<str:queue_id>/annotate/<str:object_type>/<str:object_id>/', views.annotate_item, name='annotate_item'),
+    path('queues/<str:queue_id>/annotate/<str:object_type>/<str:object_id>/', views.annotate_object, name='annotate_object'),
 ]
