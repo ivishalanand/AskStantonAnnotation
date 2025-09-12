@@ -8,11 +8,11 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from core.permissions import require_tool_permission
-from core.langfuse_client import get_session_by_id, LangfuseAPIError
+from core.langfuse.service import langfuse_service
+from core.langfuse.exceptions import LangfuseAPIError
 from core.session_parser import get_session_chat_data
 from .utils import get_annotation_queues, get_annotation_queue, get_queue_items
 from .models import AnnotationQueue, AnnotationQueueItem
-import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -202,11 +202,19 @@ def annotate_object(request, queue_id, object_type, object_id):
     # Fetch and display session data for SESSION objects
     if object_type.lower() == 'session':
         try:
-            # Fetch session data using async client
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            session = loop.run_until_complete(get_session_by_id(object_id))
-            loop.close()
+            # Fetch session data using service layer
+            session_data = langfuse_service.get_session(object_id)
+            # Convert to Session object for parser compatibility
+            from core.langfuse.models import Session
+            session = Session(
+                id=session_data['id'],
+                created_at=session_data['createdAt'],
+                updated_at=session_data.get('updatedAt', ''),
+                project_id=session_data['projectId'],
+                public=session_data.get('public', False),
+                bookmarked=session_data.get('bookmarked', False),
+                traces=session_data.get('traces', [])
+            )
             
             # Parse session data into chat format
             context['chat_data'] = get_session_chat_data(session)

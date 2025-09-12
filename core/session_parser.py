@@ -4,7 +4,7 @@ This module provides independent parsing functions that can be shared across Dja
 """
 
 from typing import Dict, Any
-from .langfuse_client import Session
+from .langfuse.models import Session, Trace
 from datetime import datetime
 import json
 
@@ -94,8 +94,24 @@ def build_chat_history(session):
     a list of dicts: [{trace_id, input, output}, ...]
     """
     chat_history = []
+    
+    # Convert raw trace data to Trace objects
+    traces_objects = []
+    for trace_data in session.traces:
+        trace = Trace(
+            id=trace_data.get('id'),
+            timestamp=trace_data.get('timestamp'),
+            name=trace_data.get('name'),
+            input=trace_data.get('input'),
+            output=trace_data.get('output'),
+            session_id=trace_data.get('sessionId'),
+            user_id=trace_data.get('userId'),
+            metadata=trace_data.get('metadata')
+        )
+        traces_objects.append(trace)
+    
     traces_sorted = sorted(
-        session.traces,
+        traces_objects,
         key=lambda t: datetime.fromisoformat(t.timestamp.replace("Z", "+00:00"))
     )
 
@@ -130,7 +146,7 @@ def get_session_chat_data(session: Session) -> Dict[str, Any]:
         'session_id': session.id,
         'created_at': session.created_at,
         'project_id': session.project_id,
-        'environment': session.environment,
+        'environment': getattr(session, 'environment', None),
         'traces': chat_traces,
         'total_traces': len(chat_traces),
     }
