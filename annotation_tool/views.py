@@ -178,7 +178,7 @@ def queue_detail(request, queue_id):
 
 @login_required
 @require_tool_permission('annotation')
-def annotate_item(request, queue_id, object_type, object_id):
+def annotate_object(request, queue_id, object_type, object_id):
     """
     Display annotation interface for a specific queue item.
     
@@ -218,4 +218,4 @@ def annotate_item(request, queue_id, object_type, object_id):
             logger.error(f"Unexpected error fetching session {object_id}: {str(e)}")
             context['error'] = f"Unexpected error: {str(e)}"
     
-    return render(request, 'annotation_tool/annotate_item.html', context)
+    return render(request, 'annotation_tool/annotate_object.html', context)
